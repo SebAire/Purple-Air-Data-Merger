@@ -38,5 +38,7 @@ This is Information on what has been done in each of the Data Tabs that can be d
 > A: Yes! please View the .txt file on the what the column names mean and their containing units
 4. What is the file limit/size for uploading data?
 > A: The file limit size is based on your memory limit of your device. For best results It is recomended to only do a few months at a time when importing data (less than 10,000 measurements) to make viewing data easier.  
-5. I have and issue/request/question about the app, how can I contact you?
+5. What is the Recommended Data Table/ Column to get for Data analysis?
+> A: I recomend downloading the Corrected Data Frame and using the 'PM_corr_EPA' column along with 'date' to compare to a FEM instrument
+6. I have and issue/request/question about the app, how can I contact you?
 > A: Please contact me through Github by creating a new issue and labeling it appropriately and I will try to get back to you ASAP.
