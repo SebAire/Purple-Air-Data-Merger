@@ -5,7 +5,7 @@
 4. [FAQs](#faqs)
 
 ## General Info
-- This is an R Shiny App that allows you to tidy Purple Air Data that has been downloaded from an SD card from an offline Purple Air sensor and Download into .csv format 
+- This is an R Shiny App that allows you to tidy Purple Air PM2.5 Data that has been downloaded from an SD card from an offline Purple Air sensor and Download into .csv format 
 - This code will only work with data exported from an SD card and not data downloaded from the Purple Air Map.
 - Data Columns for SD data are different from Map Columns more info here: https://community.purpleair.com/t/sd-card-file-headers/279
 - Corrected data uses US EPA's Simple Correction Factor which is described in detail here: https://doi.org/10.5194/amt-14-4617-2021
@@ -19,7 +19,7 @@
 3. Data will be uploaded and combined into one data file. Select the Timezone and which Dataset to Download. Rename as you would like.
 
 ## Data Tabs
-This is Info 
+This is Information on what has been done in each of the Data Tabs that can be downloaded. 
 - Raw Data: Raw Data combined into one file with no changes or corrections to the data
 - Tidy Data: Converted to selected Time Zone with Both A & B Channels along with Meterology data but no Corrections
 - Average Data: Averages 2 minute Data into 60 minute Averages 
@@ -30,3 +30,11 @@ This is Info
 - Output: Show Raw Data output from R Console. Useful for debugging 
 
 ## FAQs
+1. Why does my data produces an error when reading in my raw data files?
+> A: There are many sources of error for this problem including: Data not in right file format (ie. not .csv), Contains corruption in the data File, or browser incompability (make sure you are using a web Browser!). If errors mentions a specific file you can look in the File Names tab to identify what File is giving you the error and attempt to correct it.
+2. What data format does the App support?
+> A: Input data must be in .csv format and download data will be .csv as well
+3. Is there a list of exact names for the columns of each dataframe including units?
+> A: Yes! please View the .txt file on the what the column names mean and their containing units
+4. What is the file limit/size for uploading data?
+> A: The file limit size is based on your memory limit of your device. For best results It is recomended to only do a few months at a time when importing data (less than 10,000 measurements) to make viewing data easier.  
