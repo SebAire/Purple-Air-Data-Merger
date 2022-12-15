@@ -7,7 +7,7 @@
 ## General Info
 - This is an R Shiny App that allows you to tidy Purple Air PM2.5 Data that has been downloaded from an SD card from an offline Purple Air sensor and Download into .csv format 
 - This code will only work with data exported from an SD card and not data downloaded from the Purple Air Map.
-- Data Columns for SD data are different from Map Columns more info here: https://community.purpleair.com/t/sd-card-file-headers/279
+- Data Columns for SD data are different from Map columns more info here: https://community.purpleair.com/t/sd-card-file-headers/279
 - Corrected data uses US EPA's Simple Correction Factor which is described in detail here: https://doi.org/10.5194/amt-14-4617-2021
 - The data will be corrected and only show the columns that are necessary to be compared to FEM PM instruments. 
 
@@ -31,7 +31,7 @@ This is Information on what has been done in each of the Data Tabs that can be d
 
 ## FAQs
 1. Why does my data produces an error when reading in my raw data files?
-> A: There are many sources of error for this problem including: Data not in right file format (ie. not .csv), Contains corruption in the data File, or browser incompability (make sure you are using a web Browser!). If errors mentions a specific file you can look in the File Names tab to identify what File is giving you the error and attempt to correct it.
+> A: There are many sources of error for this problem including: Data not in right file format (ie. not .csv), Contains corruption in the data file, or browser incompability (make sure you are using a web Browser!). If errors mentions a specific file you can look in the File Names tab to identify what file is giving you the error and attempt to correct it.
 2. What data format does the App support?
 > A: Input data must be in .csv format and download data will be .csv as well
 3. Is there a list of exact names for the columns of each dataframe including units?
