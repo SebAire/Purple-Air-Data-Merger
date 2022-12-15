@@ -6,3 +6,5 @@
 
 # Notes
 **Please Note:** App will not work correctly in R studio's native web launcher please change settings in Run App -> set to run External or select open in Browser when running it in R studio. 
+- Make sure that all packages are installed in order for the App to properly function
+ 
