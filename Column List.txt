@@ -1,0 +1,39 @@
+This is Information on what has been done in each of the Data Tabs that can be downloaded.
+
+Raw Data: Raw Data combined into one file with no changes or corrections to the data
+Tidy Data: Converted to selected Time Zone with Both A & B Channels along with Meterology data but no Corrections
+Average Data: Averages 2 minute Data into 60 minute Averages
+Corrected Data: Corrects data based on QC Criteria of 70% data completeness using EPA Correction factor using both channels to generate a single PM2.5 Value
+Frequency Data: Shows the number of 2 minute data points taken in each Hour.
+File Names: Shows a Table with the File names that were selected in the Upload Phase. Useful for debugging
+Data Complete: Shows the amount of complete data between the first and last dates contained in the data upload
+Output: Show Raw Data output from R Console. Useful for debugging
+
+
+List of Column Names and there containing data and units for each of the Data Tabs:
+Raw Data:
+Same as Purple Air SD Data format found here: https://community.purpleair.com/t/sd-card-file-headers/279 
+
+Tidy Data and Average Data, and Frequency Data:
+date = Calendar Date in POSITct format (Year/Month/Day Hour:Minute:Second); uses UTCDateTime from Raw Data converted to selected Time Zone  
+PM2.5_A = PM2.5 Concentration (ug/m3) for Channel A; uses pm2_5_cf_1 Column from Raw Data 
+PM2.5_B = PM2.5 Concentration (ug/m3) for Channel B; uses pm2_5_cf_1_b Column from Raw Data 
+Temperature = Current temperature in Fahrenheit; current_temp_f Column from Raw Data
+Humidity = Current Humidity in %; current_humidity Column from Raw Data
+Dewpoint = Calculated dew point in Fahrenheit; current_dewpoint_f from Raw Data
+Pressure = Current pressure in millibars; pressure from Raw Data
+
+Corrected Data:
+date = Calendar Date in POSITct format (Year/Month/Day Hour:Minute:Second); uses UTCDateTime from Raw Data converted to selected Time Zone
+PM = PM2.5 Concentration (ug/m3); Averaged A&B Channels Hourly PM Concentrations with a 70% QC Criteria  
+PM_corr_EPA = PM 2.5 Concentration (ug/m3); Using EPA Simple Single Equation Correction based on PM Column from Corrected Data 
+RH: Humidity = Current Humidity in %; used for PM_corr_EPA calulation from Corrected Data
+Temperature = Current temperature in; Fahrenheit. current_temp_f Column from Raw Data
+Pressure = Current pressure in millibars; pressure from Raw Data
+
+Frequency Data: 
+Same Columns as Tidy and Average Data however Data Units are number of 2 minute data points taken in each hour 
+
+Note: I recommend downloading the Corrected Data Frame and using the 'PM_corr_EPA' column along with 'date' to compare to a FEM instrument
+
+
