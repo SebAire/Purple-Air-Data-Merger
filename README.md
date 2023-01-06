@@ -35,7 +35,7 @@ This is Information on what has been done in each of the Data Tabs that can be d
 2. What data format does the App support?
 > A: Input data must be in .csv format and download data will be .csv as well
 3. Is there a list of exact names for the columns of each dataframe including units?
-> A: Yes! please View the .txt file on the what the column names mean and their containing units
+> A: Yes! please view the Column test.txt file on the what the column names mean and their containing units
 4. What is the file limit/size for uploading data?
 > A: The file limit size is based on your memory limit of your device. For best results It is recomended to only do a few months at a time when importing data (less than 10,000 measurements) to make viewing data easier.  
 5. What is the Recommended Data Table/ Column to get for Data analysis?
