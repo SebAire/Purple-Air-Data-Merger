@@ -14,7 +14,7 @@
 
 ## Instructions
 **Please Note:** App will not work correctly in R studio's native web launcher please change settings in Run App -> set to run External or select open in Browser when running it in R studio. 
-1. Download the Repository and Make sure R, R studio, and all packages are installed in order for the App to properly function
+1. Download the Repository and Make sure R, R studio, and all packages are installed in order for the App to properly function (use Install.R for Package setup)
 2. Run the App in your normal web browser and browse your computer for the Raw data files (multiple files can be selected at one time)
 3. Data will be uploaded and combined into one data file. Select the Timezone and which Dataset to Download. Rename as you would like.
 
