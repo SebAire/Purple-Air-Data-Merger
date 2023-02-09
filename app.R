@@ -10,7 +10,7 @@ library("lubridate")
 library("data.table")
 library("openair")
 
-
+# Purple Air Data Merger Release Version 1.0.1
 # Define UI for application ----
 ui <- fluidPage(
   theme = bs_theme(version = 4, secondary = "#210749", bootswatch = "pulse"),
@@ -150,18 +150,22 @@ server <- function(input, output) {
   Corr_data <- reactive({
     Purple_Data <- Avg_data()
     Purple_Data <- Purple_Data %>%
-      mutate(AB_dif = (abs(PM2.5_A - PM2.5_B)/((PM2.5_A + PM2.5_B)/2))) %>% # Calculates percent diff
-      mutate(PM2.5_AVG = ((PM2.5_A + PM2.5_B)/2)) %>% #Calculates AVG between A & B Channels
-      mutate(PM_Check  = if_else(AB_dif <= 0.7, PM2.5_AVG, NA_real_)) # Performs Validation for correction
-    Purple_Data$AB_dif <- round(Purple_Data$AB_dif, 2)
+      mutate(AB_dif_per = (abs(PM2.5_A - PM2.5_B)/((PM2.5_A + PM2.5_B)/2))) %>% # Calculates percent diff
+      mutate(AB_dif_val = abs(PM2.5_A - PM2.5_B))  %>% #Checks difference between Channels
+      mutate(PM2.5_AVG = ((PM2.5_A + PM2.5_B)/2))  %>% #Calculates AVG between A & B Channels
+      mutate(PM_Check  = if_else(AB_dif_per <= 0.7 | AB_dif_val <= 5, PM2.5_AVG, NA_real_)) # Performs Validation for correction
+    Purple_Data$AB_dif <- round(Purple_Data$AB_dif_per, 2)
     corr_data <- Purple_Data
     corr_data = rename(corr_data, c(PM = PM_Check, RH = Humidity)) # Rename for equation
 
     #correction using EPA simple correction:
+    #corr_data <- corr_data %>% mutate(PM_corr_EPA = 0.524*PM - 0.0862*RH + 5.7)
+
+    #correction using EPA simple correction:
     corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when(is.numeric(PM) ~ 0.524*PM - 0.0862*RH + 5.75,
-                                                          TRUE ~ NA_real_
-                                                         )
-                                     )
+                                                              TRUE ~ NA_real_
+    )
+    )
     #Other Method using EPA Multi Point Correction
     # corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when((0 <= PM) & (PM < 30) ~ 0.524*PM - 0.0862*RH + 5.75,
     #                                                       (30 <= PM) & (PM < 50) ~ (0.786*((PM/20) - (3/2)) + 0.524*(1-((PM/20) - (3/2)))*PM - 0.0862*RH + 5.75),
@@ -169,9 +173,9 @@ server <- function(input, output) {
     #                                                       (210 <= PM) & (PM < 260) ~ (0.69*((PM/50) - (21/5)) + 0.786*(1-((PM/50) - (21/5)))*PM - 0.0862*RH*(1-((PM/50) - (21/5))) + 2.966*((PM/50) - (21/5)) + 5.75*(1-((PM/50) - (21/5))) + 8.84*(10^{-4})*(PM^{2})*((PM/50) - (21/5))),
     #                                                       (260 <= PM) ~ 2.966 + (0.69*PM) + (8.84*10^{-4}*PM^{2}),
     #                                                       TRUE ~ NA_real_
+      # )
     # )
-    # )
-    corr_data = select(corr_data,"date", "PM", "PM_corr_EPA","RH", "Temperature", "Pressure") #Reorder df
+    corr_data = select(corr_data,"date", "PM", "PM_corr_EPA","RH", "Temperature", "Dewpoint", "Pressure") #Reorder df
     return(corr_data)
   })
     
@@ -340,7 +344,7 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
     Avg_data <- Avg_data()
     Total_NA <- sum(is.na(Avg_data$PM2.5_A) | is.na(Avg_data$PM2.5_B) | is.na(Avg_data$Humidity)) #Total number of rows containing NA
     Total_row <- nrow(Avg_data) # Total number of rows
-    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # pecetnage of complete Data
+    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # percentage of complete Data
     return(print(paste("The percentage of Complete Data collected for the file is: ", round(Data_coll,1),"%", sep = "")))
   })  
     
