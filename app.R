@@ -443,7 +443,7 @@ server <- function(input, output) {
       ),
       tags$hr(),
       h5("About:"),
-      "Purple Air Data Merger Version 1.0.3",
+      "Purple Air Data Merger Version 1.0.2",
       br(),
       "More info and updates can be be found on GitHub:",
       a(href = "https://github.com/SebAire/Purple-Air-Data-Merger", "Link"),
