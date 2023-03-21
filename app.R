@@ -44,7 +44,13 @@ ui <- fluidPage(
                   choices = c("Raw Data", "Tidy Data", "Average Data", "Corrected Data", "Frequency Data")),
       
       # Input: Select number of rows to display ----
-      downloadButton("downloadData", "Download")
+      downloadButton("downloadData", "Download"),
+      
+      # Horizontal line ----
+      tags$hr(),
+      
+      # Output: Help Button ----
+      actionButton("helpbutton", "", icon = icon("question-circle"))
       
     ),
     
@@ -70,7 +76,7 @@ ui <- fluidPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output) {
-  
+  #bslib::bs_themer()
   # Define Raw Data Reactive Function ----
   Raw_data <- reactive({
     req(input$rawdata)
@@ -80,33 +86,44 @@ server <- function(input, output) {
     return(Rawdf)
   })
   
+  Mac_val <- reactive({
+    req(input$rawdata)
+    Raw_data <- Raw_data()
+    Mac_val <- as.character(Raw_data[1, 'mac_address'])
+    return(Mac_val)
+  })
+  
   # Define Tidy Data Reactive Function ----
   Tidy_data <- reactive({
     req(input$rawdata)
     Tidy_data <- Raw_data()
     Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
-    #Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure") # For Atm instead of CF
+    #Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
     Tidy_data$UTCDateTime <- str_replace_all(Tidy_data$UTCDateTime, "[:alpha:]", " ") #Removes any letters in Date column
     #Tidy_data$UTCDateTime <- str_remove_all(Tidy_data$UTCDateTime, '[Tz]') #Removes any letters in Date column
     Tidy_data$Date_UTC <- as.POSIXct(Tidy_data$UTCDateTime, tz = "UTC", format = "%Y/%m/%d %H:%M:%S") # Convert to UTC
     # Tidy_data <- Tidy_data %>% 
-    #   mutate(Date_EST = as_datetime(Date_UTC, tz = "EST")) # Convert all Datatables to same Timezone format 
+    #   mutate(Date_EST = as_datetime(Date_UTC, tz = "EST"))
     #Tidy_data$Date_UTC <- as.POSIXct(Tidy_data$UTCDateTime, tz = "EST", format = "%Y/%m/%d %H:%M:%S", usetz = T) # Convert to UTC
     Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
-    #Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure") # For Atm istead of CF
+    #Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
     colnames(Tidy_data) = c("date", "PM2.5_A", "PM2.5_B", "Temperature", "Humidity", "Dewpoint", "Pressure")
     #return(Tidy_data)
     #colSums(is.na(Tidy_data)) #prints the number of NA in each column
- 
-     # Conversion to EST for Data Download
-  if(input$zonetime == "EST") {
+    
+    # New Portion for MAC address
+    Mac_val <- Mac_val()
     Tidy_data <- Tidy_data %>% 
-       mutate(date = as_datetime(date, tz = "EST")) # Can be any acceptable Time Zone
-    return(Tidy_data)
-  }
-  else {
-    return(Tidy_data)
-  }
+      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))
+    # Conversion to EST for Data Download
+    if(input$zonetime == "EST") {
+      Tidy_data <- Tidy_data %>% 
+        mutate(date = as_datetime(date, tz = "EST"))
+      return(Tidy_data)
+    }
+    else {
+      return(Tidy_data)
+    }
   })
   
   # Define Average Data Reactive Function ----
@@ -125,9 +142,13 @@ server <- function(input, output) {
       vector.ws = FALSE,
       fill = FALSE,
     )
+    # New Portion for MAC address
+    Mac_val <- Mac_val()
+    Avg_data <- Avg_data %>% 
+      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))  
     return(Avg_data)
   })
-
+  
   Freq_data <- reactive({
     req(input$rawdata)
     Freq_data <- timeAverage(
@@ -143,11 +164,16 @@ server <- function(input, output) {
       vector.ws = FALSE,
       fill = FALSE,
     )
+    # New Portion for MAC address
+    Mac_val <- Mac_val()
+    Freq_data <- Freq_data %>% 
+      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))    
     return(Freq_data)
   })
   
   # Define Corrected Data Reactive Function ----  
   Corr_data <- reactive({
+    # Validation for correction is 70% difference or a difference of 5 
     Purple_Data <- Avg_data()
     Purple_Data <- Purple_Data %>%
       mutate(AB_dif_per = (abs(PM2.5_A - PM2.5_B)/((PM2.5_A + PM2.5_B)/2))) %>% # Calculates percent diff
@@ -157,11 +183,8 @@ server <- function(input, output) {
     Purple_Data$AB_dif <- round(Purple_Data$AB_dif_per, 2)
     corr_data <- Purple_Data
     corr_data = rename(corr_data, c(PM = PM_Check, RH = Humidity)) # Rename for equation
-
-    #correction using EPA simple correction:
-    #corr_data <- corr_data %>% mutate(PM_corr_EPA = 0.524*PM - 0.0862*RH + 5.7)
-
-    #correction using EPA simple correction:
+    
+    #correction using EPA simple correction: (Comment this portion out including parantheses to use other corrections)
     corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when(is.numeric(PM) ~ 0.524*PM - 0.0862*RH + 5.75,
                                                               TRUE ~ NA_real_
     )
@@ -173,12 +196,24 @@ server <- function(input, output) {
     #                                                       (210 <= PM) & (PM < 260) ~ (0.69*((PM/50) - (21/5)) + 0.786*(1-((PM/50) - (21/5)))*PM - 0.0862*RH*(1-((PM/50) - (21/5))) + 2.966*((PM/50) - (21/5)) + 5.75*(1-((PM/50) - (21/5))) + 8.84*(10^{-4})*(PM^{2})*((PM/50) - (21/5))),
     #                                                       (260 <= PM) ~ 2.966 + (0.69*PM) + (8.84*10^{-4}*PM^{2}),
     #                                                       TRUE ~ NA_real_
-      # )
     # )
-    corr_data = select(corr_data,"date", "PM", "PM_corr_EPA","RH", "Temperature", "Dewpoint", "Pressure") #Reorder df
+    # )
+    #Other Method using EPA Multi Point Correction *Newer Equation (Dec 2022)*
+    # corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when((0 <= PM) & (PM < 570) ~ PM*0.524 - 0.0862*RH + 5.75,
+    #                                                       (570 <= PM) & (PM < 611) ~ ((0.0244 * PM - 13.9) * (((PM)^{2}) * (4.21*10^{-4}) + (PM*0.392) + 3.44) + (1-(0.0244 * PM - 13.9)) * (PM*0.524 - 0.0862*RH + 5.75)),
+    #                                                       (611 <= PM) ~ ((PM)^{2}) * (4.21*10^{-4}) + (PM*0.392) + 3.44,
+    #                                                       TRUE ~ NA_real_
+    # )
+    # )
+    corr_data = select(corr_data,"date", "PM", "PM_corr_EPA","RH", "Temperature", "Pressure") #Reorder df
+    # New Portion for MAC address
+    Mac_val <- Mac_val()
+    corr_data <- corr_data %>% 
+      #mutate(mac_address = if_else(is.POSIXct(date), Mac_val, NA_character_))
+      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))
     return(corr_data)
   })
-    
+  
   # Reactive value for selected dataset ----
   datasetInput <- reactive({
     switch(input$dataset,
@@ -191,18 +226,9 @@ server <- function(input, output) {
   
   #Set global options for Datatables 
   #options(DT.options = list())) #Place options inside List
-Zone_sel <- reactive({if(input$zonetime == "EST") {
-  Tbloption <- list(year = 'numeric', 
-                    month = 'long', 
-                    day = 'numeric', 
-                    hour = 'numeric', 
-                    minute = 'numeric', 
-                    second = 'numeric', 
-                    timeZoneName = "short", 
-                    timeZone = "EST")
-  return(Tbloption)
-}
-  else {
+  Zone_sel <- reactive({if(input$zonetime == "EST") {
+    #Zone_selc <- "EST"
+    #return(Zone_selc)
     Tbloption <- list(year = 'numeric', 
                       month = 'long', 
                       day = 'numeric', 
@@ -210,10 +236,47 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
                       minute = 'numeric', 
                       second = 'numeric', 
                       timeZoneName = "short", 
-                      timeZone = "UTC")
+                      timeZone = "EST")
     return(Tbloption)
   }
+    else {
+      #Zone_selc <- "UTC"
+      #return(Zone_selc)
+      Tbloption <- list(year = 'numeric', 
+                        month = 'long', 
+                        day = 'numeric', 
+                        hour = 'numeric', 
+                        minute = 'numeric', 
+                        second = 'numeric', 
+                        timeZoneName = "short", 
+                        timeZone = "UTC")
+      return(Tbloption)
+    }
   })
+  #Tbloption <- Zone_sel()
+  
+  # ZoneSelect = Zone_sel()
+  #  Tbloption <- list(year = 'numeric', 
+  #                    month = 'long', 
+  #                    day = 'numeric', 
+  #                    hour = 'numeric', 
+  #                    minute = 'numeric', 
+  #                    second = 'numeric', 
+  #                    timeZoneName = "short", 
+  #                    timeZone = ZoneSelect)
+  
+  # Tbloption2 <-formatDate(columns = 'date',
+  #                         method = 'toLocaleString',
+  #                         #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
+  #                         params = list('en-US', list(year = 'numeric', 
+  #                                                     month = 'long', 
+  #                                                     day = 'numeric', 
+  #                                                     hour = 'numeric',
+  #                                                     minute = 'numeric',
+  #                                                     second = 'numeric',
+  #                                                     timeZoneName = "short",
+  #                                                     timeZone = "UTC")))
+  
   output$contents <- DT::renderDataTable({
     req(input$rawdata)
     tryCatch(
@@ -228,20 +291,20 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
     )
     
   })
-
+  
   output$rawfile <- DT::renderDataTable({
     req(input$rawdata)
     tryCatch(
-       {
-    Raw_input <- input$rawdata # Creates File
-    return(Raw_input)
+      {
+        Raw_input <- input$rawdata # Creates File
+        return(Raw_input)
       },
       error = function(e) {
         
         stop(safeError(e))
       }
     )
-
+    
   })
   
   output$tidyfile <- DT::renderDataTable({
@@ -256,7 +319,7 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
                      params = list('en-us', Tbloption))
         # Tidydf <- datatable(Tidydf) %>% 
         #   formatDate(columns = 'date',
-        #              method = 'toUTCString') # Change if want only UTC string
+        #              method = 'toUTCString')
         return(Tidydf)
       },
       error = function(e) {
@@ -268,55 +331,56 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
   
   output$avgfile <- DT::renderDataTable({
     req(input$rawdata)
-      
-      tryCatch(
-        {
-          Avgdf <- Avg_data()
-          Tbloption <- Zone_sel()
-          Avgdf <- datatable(Avgdf) %>% 
-            formatDate(columns = 'date',
-                       method = 'toLocaleString',
-                       params = list('en-US', Tbloption)
-                       # params = list('en-US', list(year = 'numeric', 
-                       #                             month = 'long', 
-                       #                             day = 'numeric', 
-                       #                             hour = 'numeric',
-                       #                             minute = 'numeric',
-                       #                             second = 'numeric',
-                       #                             #dateStyle = "Full",
-                       #                             #timeStyle = "Full", 
-                       #                             timeZoneName = "short",
-                       #                             timeZone = "EST"
-                       #                             )
-                       #               ) # manual options in each individual Table
-                       )  
-        },
-        error = function(e) {
-          
-          stop(safeError(e))
-        }
-      )
+    
+    tryCatch(
+      {
+        Avgdf <- Avg_data()
+        Tbloption <- Zone_sel()
+        Avgdf <- datatable(Avgdf) %>% 
+          formatDate(columns = 'date',
+                     method = 'toLocaleString',
+                     #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
+                     params = list('en-US', Tbloption)
+                     # params = list('en-US', list(year = 'numeric', 
+                     #                             month = 'long', 
+                     #                             day = 'numeric', 
+                     #                             hour = 'numeric',
+                     #                             minute = 'numeric',
+                     #                             second = 'numeric',
+                     #                             #dateStyle = "Full",
+                     #                             #timeStyle = "Full", 
+                     #                             timeZoneName = "short",
+                     #                             timeZone = "EST"
+                     #                             )
+                     #               )
+          )  
+      },
+      error = function(e) {
+        
+        stop(safeError(e))
+      }
+    )
   })
   
-    output$freqfile <- DT::renderDataTable({
-      req(input$rawdata)
-      
-      tryCatch(
-        {
-          Freqdf <- Freq_data()
-          Tbloption <- Zone_sel()
-          Freqdf <- datatable(Freqdf) %>% 
-            formatDate(columns = 'date',
-                       method = 'toLocaleString',
-                       params = list('en-us', Tbloption))
-        },
-        error = function(e) {
-
-          stop(safeError(e))
-        }
-      )
-  })
+  output$freqfile <- DT::renderDataTable({
+    req(input$rawdata)
     
+    tryCatch(
+      {
+        Freqdf <- Freq_data()
+        Tbloption <- Zone_sel()
+        Freqdf <- datatable(Freqdf) %>% 
+          formatDate(columns = 'date',
+                     method = 'toLocaleString',
+                     params = list('en-us', Tbloption))
+      },
+      error = function(e) {
+        
+        stop(safeError(e))
+      }
+    )
+  })
+  
   output$corrfile <- DT::renderDataTable({
     req(input$rawdata)
     
@@ -337,24 +401,24 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
       }
     )
   })
-
+  
   # Renders % of Complete Data collected ----
   output$Percomp <- renderPrint({
     req(input$rawdata)
     Avg_data <- Avg_data()
     Total_NA <- sum(is.na(Avg_data$PM2.5_A) | is.na(Avg_data$PM2.5_B) | is.na(Avg_data$Humidity)) #Total number of rows containing NA
     Total_row <- nrow(Avg_data) # Total number of rows
-    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # percentage of complete Data
+    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # pecetnage of complete Data
     return(print(paste("The percentage of Complete Data collected for the file is: ", round(Data_coll,1),"%", sep = "")))
   })  
-    
+  
   # Renders Output of Variables for Debugging ----
   output$Test1 <- renderPrint({
     req(input$rawdata)
     return(str(Tidy_data()))
   })
-
-    
+  
+  
   # Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -364,8 +428,39 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
       write.csv(datasetInput(), file, row.names = FALSE)
     }
   )
+  # Help Button Modal Info
+  observeEvent(input$helpbutton, {
+    showModal(modalDialog(
+      title = "Help",
+      "This is a R shiny App to tidy Purple Air SD card data into one file.",
+      p(),
+      h5("Steps:"),
+      tags$ol(
+        tags$li("Browse for the SD card data and select the raw .csv files"),
+        #br(),
+        tags$li("Select the Timezone that the data will be in."),
+        tags$li("Select the Dataset to export and click Download.")
+      ),
+      tags$hr(),
+      h5("About:"),
+      "Purple Air Data Merger Version 1.0.3",
+      br(),
+      "More info and updates can be be found on GitHub:",
+      a(href = "https://github.com/SebAire/Purple-Air-Data-Merger", "Link"),
+      br(),
+      "Info about SD card data headers can be found here:",
+      a(href = "https://community.purpleair.com/t/sd-card-file-headers/279", "Link"),
+      
+      #Options for Modal
+      easyClose = TRUE,
+      footer = modalButton("", icon = icon("times-circle")),
+      #footer = modalButton("", icon = icon("github")),
+      size = "m"
+    ))
+  })
   
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
