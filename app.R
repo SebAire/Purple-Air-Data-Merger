@@ -2,15 +2,24 @@
 library(shiny)
 library(DT)
 library(bslib)
+library("shinyalert")
+#library(shinyjs)
+#library(bootstraplib)
 library("dplyr")
 library("stringr")
 library("tidyr")
+library("readr")
 library("tibble")
+#library("ggplot2")
+#library("readxl")
+#library("openxlsx")
 library("lubridate")
+#library("showtext")
+#library("formattable")
 library("data.table")
 library("openair")
 
-# Purple Air Data Merger Release Version 1.0.1
+# Purple Air Data Merger 1.0.3
 # Define UI for application ----
 ui <- fluidPage(
   theme = bs_theme(version = 4, secondary = "#210749", bootswatch = "pulse"),
@@ -23,6 +32,13 @@ ui <- fluidPage(
     
     # Sidebar panel for inputs ----
     sidebarPanel(
+      
+      # Input: Select a file 
+      # fileInput("rawdata", "Choose Raw CSV File",
+      #           multiple = TRUE,
+      #           accept = c("text/csv",
+      #                      "text/comma-separated-values,text/plain",
+      #                      ".csv")),
       fileInput("rawdata", "Choose Raw CSV File(s):",
                 multiple = TRUE,
                 accept = ".csv"),
@@ -30,7 +46,16 @@ ui <- fluidPage(
       # Horizontal line ----
       tags$hr(),
       
-      # Input: Select number of rows to display ----
+      # # Input: Select number of rows to display ----
+      # radioButtons("disp", "Display",
+      #              choices = c(Head = "head",
+      #                          All = "all"),
+      #              selected = "all"),
+      # 
+      # # Horizontal line ----
+      # tags$hr(),
+
+      # Input: Select number of rows to display ---- 
       radioButtons("zonetime", "Timezone Format for Data Download:",
                    choices = c(UTC = "UTC",
                                EST = "EST"),
@@ -46,18 +71,18 @@ ui <- fluidPage(
       # Input: Select number of rows to display ----
       downloadButton("downloadData", "Download"),
       
-      # Horizontal line ----
       tags$hr(),
-      
-      # Output: Help Button ----
       actionButton("helpbutton", "", icon = icon("question-circle"))
       
     ),
     
     # Main panel for displaying outputs ----
     mainPanel(
+      #tabsetPanel(
       navbarPage(
+        #inverse = TRUE,
         title = 'Data Table Selection',
+        #id = 'dataset',
         id = 'panelset',
         tabPanel("Raw Data", DT::dataTableOutput("contents")),
         tabPanel("Tidy Data", DT::dataTableOutput("tidyfile")),
@@ -67,6 +92,8 @@ ui <- fluidPage(
         tabPanel("File names", DT::dataTableOutput("rawfile")),
         tabPanel("Data Complete", verbatimTextOutput("Percomp")),
         tabPanel("Output Test", verbatimTextOutput("Test1"))
+        #tabPanel("Tidy Data", DT::dataTableOutput("mytable2")),
+        #tabPanel("iris", DT::dataTableOutput("mytable3"))
       
     )
     
@@ -74,8 +101,68 @@ ui <- fluidPage(
 )
 )
 
+#Create Function for Debugging Files ----
+alertNoData <- function(data) # Creates and alert to showcase that you cannot download the data
+{
+  tryCatch(
+    data,
+    error = function(e)
+    { 
+      
+      shinyalert(
+        "Alert! No data available!",
+        # paste("
+        #   <br/>
+        #   <p>
+        #    Selected dataframe cannot be downloaded. Please check error printed out when selected in Data Table Selection.
+        #   </p>
+        #   <br/>
+        #   <p>
+        #     NOTE: An HTML file will be downloaded containing an error message.
+        #   </p>
+        #   "),
+
+        text = paste("Selected dataframe cannot be downloaded. Please check error printed out when selected in Data Table Selection.",
+          br(),
+          "Review data to ensure there are no missing Columns or corrupted data and fix .csv files that have issues",
+          br(),
+          tags$h4("NOTE: An HTML file will be downloaded containing an error message.")),
+        
+        # paste("
+        #   <br/>
+        #   <p>
+        #     Ensure you have selected a region and have clicked
+        #     <b>Apply Geographic Filter</b>
+        #     and
+        #     <b>Apply Map Settings</b>
+        #   </p>
+        #   <br/>
+        #   <p>
+        #     NOTE: An HTML file will be downloaded containing an error message.
+        #   </p>
+        #   "),
+        type = "error",
+        html = TRUE
+      )
+      # showModal(modalDialog(
+      #   title = "Alert!",
+      #   "Selected dataframe cannot be downloaded. Please check error printed out when selected in Data Table Selection.",
+      #   p(),
+      #   "Additonally Review data to ensure there are no missing Columns or corrupted data and fix .csv files that have issues",
+      #   #Options for Modal
+      #   easyClose = TRUE,
+      #   footer = modalButton("", icon = icon("times-circle")),
+      #   #footer = modalButton("", icon = icon("github")),
+      #   size = "m"
+      # ))
+      stop(safeError("Error"))
+    }
+  )
+}
+
+
 # Define server logic to read selected file ----
-server <- function(input, output) {
+server <- function(input, output, session) {
   #bslib::bs_themer()
   # Define Raw Data Reactive Function ----
   Raw_data <- reactive({
@@ -83,8 +170,16 @@ server <- function(input, output) {
     Raw_input <- input$rawdata # Creates File
     Tidy_input <- Raw_input %>% filter(grepl('.csv', name)) # Selects only files that end in ".csv"
     Rawdf <- do.call(rbind, lapply(Tidy_input$datapath, fread, fill = TRUE)) # Combines files into a df
+    #Rawdf <- do.call(rbind, lapply(Tidy_input$datapath, read_csv)) # Combines files into a df
     return(Rawdf)
   })
+  
+  # Prob_data <- reactive({
+  #   req(input$rawdata)
+  #   Raw_data <- Raw_data()
+  #   Probdf <- problems(Raw_data)
+  #   return(Probdf)
+  # })  
   
   Mac_val <- reactive({
     req(input$rawdata)
@@ -115,15 +210,15 @@ server <- function(input, output) {
     Mac_val <- Mac_val()
     Tidy_data <- Tidy_data %>% 
       mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))
-    # Conversion to EST for Data Download
-    if(input$zonetime == "EST") {
-      Tidy_data <- Tidy_data %>% 
-        mutate(date = as_datetime(date, tz = "EST"))
-      return(Tidy_data)
-    }
-    else {
-      return(Tidy_data)
-    }
+  # Conversion to EST for Data Download
+  if(input$zonetime == "EST") {
+    Tidy_data <- Tidy_data %>% 
+       mutate(date = as_datetime(date, tz = "EST"))
+    return(Tidy_data)
+  }
+  else {
+    return(Tidy_data)
+  }
   })
   
   # Define Average Data Reactive Function ----
@@ -142,13 +237,13 @@ server <- function(input, output) {
       vector.ws = FALSE,
       fill = FALSE,
     )
-    # New Portion for MAC address
-    Mac_val <- Mac_val()
-    Avg_data <- Avg_data %>% 
-      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))  
-    return(Avg_data)
+  # New Portion for MAC address
+  Mac_val <- Mac_val()
+  Avg_data <- Avg_data %>% 
+    mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))  
+  return(Avg_data)
   })
-  
+
   Freq_data <- reactive({
     req(input$rawdata)
     Freq_data <- timeAverage(
@@ -164,11 +259,11 @@ server <- function(input, output) {
       vector.ws = FALSE,
       fill = FALSE,
     )
-    # New Portion for MAC address
-    Mac_val <- Mac_val()
-    Freq_data <- Freq_data %>% 
-      mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))    
-    return(Freq_data)
+  # New Portion for MAC address
+  Mac_val <- Mac_val()
+  Freq_data <- Freq_data %>% 
+    mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))    
+  return(Freq_data)
   })
   
   # Define Corrected Data Reactive Function ----  
@@ -183,12 +278,12 @@ server <- function(input, output) {
     Purple_Data$AB_dif <- round(Purple_Data$AB_dif_per, 2)
     corr_data <- Purple_Data
     corr_data = rename(corr_data, c(PM = PM_Check, RH = Humidity)) # Rename for equation
-    
+
     #correction using EPA simple correction: (Comment this portion out including parantheses to use other corrections)
     corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when(is.numeric(PM) ~ 0.524*PM - 0.0862*RH + 5.75,
-                                                              TRUE ~ NA_real_
-    )
-    )
+                                                          TRUE ~ NA_real_
+                                                         )
+                                     )
     #Other Method using EPA Multi Point Correction
     # corr_data <- corr_data %>% mutate(PM_corr_EPA = case_when((0 <= PM) & (PM < 30) ~ 0.524*PM - 0.0862*RH + 5.75,
     #                                                       (30 <= PM) & (PM < 50) ~ (0.786*((PM/20) - (3/2)) + 0.524*(1-((PM/20) - (3/2)))*PM - 0.0862*RH + 5.75),
@@ -213,7 +308,7 @@ server <- function(input, output) {
       mutate(mac_address = if_else(!is.na(date), Mac_val, NA_character_))
     return(corr_data)
   })
-  
+    
   # Reactive value for selected dataset ----
   datasetInput <- reactive({
     switch(input$dataset,
@@ -226,8 +321,21 @@ server <- function(input, output) {
   
   #Set global options for Datatables 
   #options(DT.options = list())) #Place options inside List
-  Zone_sel <- reactive({if(input$zonetime == "EST") {
-    #Zone_selc <- "EST"
+Zone_sel <- reactive({if(input$zonetime == "EST") {
+  #Zone_selc <- "EST"
+  #return(Zone_selc)
+  Tbloption <- list(year = 'numeric', 
+                    month = 'long', 
+                    day = 'numeric', 
+                    hour = 'numeric', 
+                    minute = 'numeric', 
+                    second = 'numeric', 
+                    timeZoneName = "short", 
+                    timeZone = "EST")
+  return(Tbloption)
+}
+  else {
+    #Zone_selc <- "UTC"
     #return(Zone_selc)
     Tbloption <- list(year = 'numeric', 
                       month = 'long', 
@@ -236,46 +344,33 @@ server <- function(input, output) {
                       minute = 'numeric', 
                       second = 'numeric', 
                       timeZoneName = "short", 
-                      timeZone = "EST")
+                      timeZone = "UTC")
     return(Tbloption)
   }
-    else {
-      #Zone_selc <- "UTC"
-      #return(Zone_selc)
-      Tbloption <- list(year = 'numeric', 
-                        month = 'long', 
-                        day = 'numeric', 
-                        hour = 'numeric', 
-                        minute = 'numeric', 
-                        second = 'numeric', 
-                        timeZoneName = "short", 
-                        timeZone = "UTC")
-      return(Tbloption)
-    }
   })
-  #Tbloption <- Zone_sel()
-  
-  # ZoneSelect = Zone_sel()
-  #  Tbloption <- list(year = 'numeric', 
-  #                    month = 'long', 
-  #                    day = 'numeric', 
-  #                    hour = 'numeric', 
-  #                    minute = 'numeric', 
-  #                    second = 'numeric', 
-  #                    timeZoneName = "short", 
-  #                    timeZone = ZoneSelect)
-  
-  # Tbloption2 <-formatDate(columns = 'date',
-  #                         method = 'toLocaleString',
-  #                         #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
-  #                         params = list('en-US', list(year = 'numeric', 
-  #                                                     month = 'long', 
-  #                                                     day = 'numeric', 
-  #                                                     hour = 'numeric',
-  #                                                     minute = 'numeric',
-  #                                                     second = 'numeric',
-  #                                                     timeZoneName = "short",
-  #                                                     timeZone = "UTC")))
+#Tbloption <- Zone_sel()
+
+# ZoneSelect = Zone_sel()
+#  Tbloption <- list(year = 'numeric', 
+#                    month = 'long', 
+#                    day = 'numeric', 
+#                    hour = 'numeric', 
+#                    minute = 'numeric', 
+#                    second = 'numeric', 
+#                    timeZoneName = "short", 
+#                    timeZone = ZoneSelect)
+
+# Tbloption2 <-formatDate(columns = 'date',
+#                         method = 'toLocaleString',
+#                         #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
+#                         params = list('en-US', list(year = 'numeric', 
+#                                                     month = 'long', 
+#                                                     day = 'numeric', 
+#                                                     hour = 'numeric',
+#                                                     minute = 'numeric',
+#                                                     second = 'numeric',
+#                                                     timeZoneName = "short",
+#                                                     timeZone = "UTC")))
   
   output$contents <- DT::renderDataTable({
     req(input$rawdata)
@@ -285,26 +380,32 @@ server <- function(input, output) {
         Rawdf
       },
       error = function(e) {
-        
+        errorsf <- as.character(safeError(e))
+        validate(
+          need(exists("Rawdf"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+        )
         stop(safeError(e))
       }
     )
     
   })
-  
+
   output$rawfile <- DT::renderDataTable({
     req(input$rawdata)
     tryCatch(
-      {
-        Raw_input <- input$rawdata # Creates File
-        return(Raw_input)
+       {
+    Raw_input <- input$rawdata # Creates File
+    return(Raw_input)
       },
       error = function(e) {
-        
+        errorsf <- as.character(safeError(e))
+        validate(
+          need(exists("Raw_input"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+        )
         stop(safeError(e))
       }
     )
-    
+
   })
   
   output$tidyfile <- DT::renderDataTable({
@@ -312,6 +413,8 @@ server <- function(input, output) {
     tryCatch(
       {
         Tidydf <- Tidy_data()
+        
+        validate(need(ncol(Tidydf) == 8,  "Dataframe is missing columns please review data for errors/corruption"))
         Tbloption <- Zone_sel()
         Tidydf <- datatable(Tidydf) %>% 
           formatDate(columns = 'date',
@@ -323,7 +426,10 @@ server <- function(input, output) {
         return(Tidydf)
       },
       error = function(e) {
-        
+        errorsf <- as.character(safeError(e))
+        validate(
+          need(exists("Tidydf"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+        )        
         stop(safeError(e))
       }
     )
@@ -331,62 +437,74 @@ server <- function(input, output) {
   
   output$avgfile <- DT::renderDataTable({
     req(input$rawdata)
-    
-    tryCatch(
-      {
-        Avgdf <- Avg_data()
-        Tbloption <- Zone_sel()
-        Avgdf <- datatable(Avgdf) %>% 
-          formatDate(columns = 'date',
-                     method = 'toLocaleString',
-                     #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
-                     params = list('en-US', Tbloption)
-                     # params = list('en-US', list(year = 'numeric', 
-                     #                             month = 'long', 
-                     #                             day = 'numeric', 
-                     #                             hour = 'numeric',
-                     #                             minute = 'numeric',
-                     #                             second = 'numeric',
-                     #                             #dateStyle = "Full",
-                     #                             #timeStyle = "Full", 
-                     #                             timeZoneName = "short",
-                     #                             timeZone = "EST"
-                     #                             )
-                     #               )
-          )  
-      },
-      error = function(e) {
-        
-        stop(safeError(e))
-      }
-    )
+      
+      tryCatch(
+        {
+          Avgdf <- Avg_data()
+          # Validation for confirming Dataframe completeness 
+          validate(need(ncol(Avgdf) == 8,  "Dataframe is missing columns please review data for errors/corruption."))
+          
+          Tbloption <- Zone_sel()
+          Avgdf <- datatable(Avgdf) %>% 
+            formatDate(columns = 'date',
+                       method = 'toLocaleString',
+                       #params = list('en-KR', list(year = 'numeric', month = 'long', day = 'numeric')))
+                       params = list('en-US', Tbloption)
+                       # params = list('en-US', list(year = 'numeric', 
+                       #                             month = 'long', 
+                       #                             day = 'numeric', 
+                       #                             hour = 'numeric',
+                       #                             minute = 'numeric',
+                       #                             second = 'numeric',
+                       #                             #dateStyle = "Full",
+                       #                             #timeStyle = "Full", 
+                       #                             timeZoneName = "short",
+                       #                             timeZone = "EST"
+                       #                             )
+                       #               )
+                       )  
+        },
+        error = function(e) {
+          errorsf <- as.character(safeError(e))
+          validate(
+            need(exists("Avgdf"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+            #need(ncol("Avgdf") != 7,  "Dataframe is missing columns please review data for errors/corruption")
+          )    
+          stop(safeError(e))
+        }
+      )
   })
   
-  output$freqfile <- DT::renderDataTable({
-    req(input$rawdata)
-    
-    tryCatch(
-      {
-        Freqdf <- Freq_data()
-        Tbloption <- Zone_sel()
-        Freqdf <- datatable(Freqdf) %>% 
-          formatDate(columns = 'date',
-                     method = 'toLocaleString',
-                     params = list('en-us', Tbloption))
-      },
-      error = function(e) {
-        
-        stop(safeError(e))
-      }
-    )
+    output$freqfile <- DT::renderDataTable({
+      req(input$rawdata)
+      
+      tryCatch(
+        {
+          Freqdf <- Freq_data()
+          validate(need(ncol(Freqdf) == 8,  "Dataframe is missing columns please review data for errors/corruption."))          
+          Tbloption <- Zone_sel()
+          Freqdf <- datatable(Freqdf) %>% 
+            formatDate(columns = 'date',
+                       method = 'toLocaleString',
+                       params = list('en-us', Tbloption))
+        },
+        error = function(e) {
+          errorsf <- as.character(safeError(e))
+          validate(
+            need(exists("Freqdf"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+          ) 
+          stop(safeError(e))
+        }
+      )
   })
-  
+    
   output$corrfile <- DT::renderDataTable({
     req(input$rawdata)
     
     tryCatch(
       {
         Corrdf <- Corr_data()
+        validate(need(ncol(Corrdf) == 7,  "Dataframe is missing columns please review data for errors/corruption."))
         #Corrdf
         Tbloption <- Zone_sel()
         Corrdf <- datatable(Corrdf) %>% 
@@ -396,38 +514,49 @@ server <- function(input, output) {
         return(Corrdf)
       },
       error = function(e) {
-        
+        errorsf <- as.character(safeError(e))
+        validate(
+          need(exists("Corrdf"), paste("Data frame not generated please check error:", errorsf, sep = "\n"))
+        )
         stop(safeError(e))
       }
     )
   })
-  
+
   # Renders % of Complete Data collected ----
   output$Percomp <- renderPrint({
     req(input$rawdata)
     Avg_data <- Avg_data()
     Total_NA <- sum(is.na(Avg_data$PM2.5_A) | is.na(Avg_data$PM2.5_B) | is.na(Avg_data$Humidity)) #Total number of rows containing NA
     Total_row <- nrow(Avg_data) # Total number of rows
-    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # pecetnage of complete Data
+    Data_coll <- (1 - (Total_NA /Total_row)) * 100 # percentage of complete Data
     return(print(paste("The percentage of Complete Data collected for the file is: ", round(Data_coll,1),"%", sep = "")))
   })  
-  
+    
   # Renders Output of Variables for Debugging ----
   output$Test1 <- renderPrint({
     req(input$rawdata)
+    #return(Prob_data())
     return(str(Tidy_data()))
   })
-  
-  
+
+    
   # Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
     filename = function() {
       paste(input$dataset, ".csv", sep = "")
     },
     content = function(file) {
+      alertNoData(datasetInput())
       write.csv(datasetInput(), file, row.names = FALSE)
     }
   )
+
+  # Change Navbar tab based on input 
+  observeEvent(input$dataset, {
+    updateNavbarPage(session, "panelset", selected = input$dataset)
+  })
+  
   # Help Button Modal Info
   observeEvent(input$helpbutton, {
     showModal(modalDialog(
@@ -436,14 +565,14 @@ server <- function(input, output) {
       p(),
       h5("Steps:"),
       tags$ol(
-        tags$li("Browse for the SD card data and select the raw .csv files"),
-        #br(),
-        tags$li("Select the Timezone that the data will be in."),
-        tags$li("Select the Dataset to export and click Download.")
-      ),
+      tags$li("Browse for the SD card data and select the raw .csv files"),
+      #br(),
+      tags$li("Select the Timezone that the data will be in."),
+      tags$li("Select the Dataset to export and click Download.")
+        ),
       tags$hr(),
       h5("About:"),
-      "Purple Air Data Merger Version 1.0.2",
+      "Purple Air Data Merger Version 1.0.3",
       br(),
       "More info and updates can be be found on GitHub:",
       a(href = "https://github.com/SebAire/Purple-Air-Data-Merger", "Link"),
@@ -458,9 +587,10 @@ server <- function(input, output) {
       size = "m"
     ))
   })
-  
-}
 
+}
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+# Run with Bootstrapper Themer
+#run_with_themer(shinyApp(ui = ui, server = server))
