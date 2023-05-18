@@ -19,7 +19,7 @@ library("lubridate")
 library("data.table")
 library("openair")
 
-# Purple Air Data Merger Development
+# Purple Air Data Merger 1.0.3
 # Define UI for application ----
 ui <- fluidPage(
   theme = bs_theme(version = 4, secondary = "#210749", bootswatch = "pulse"),
