@@ -8,7 +8,7 @@
 - This is an R Shiny App that allows you to tidy Purple Air PM2.5 Data that has been downloaded from an SD card from an offline Purple Air sensor and Download into .csv format 
 - This code will only work with data exported from an SD card and not data downloaded from the Purple Air Map.
 - Data Columns for SD data are different from Map columns more info here: https://community.purpleair.com/t/sd-card-file-headers/279
-- Corrected data uses US EPA's Simple Correction Factor which is described in detail here: https://doi.org/10.5194/amt-14-4617-2021
+- Corrected data uses US EPA's Simple Correction Factor which is described in detail here: https://www.mdpi.com/1424-8220/22/24/9669
 - The data will be corrected and only show the columns that are necessary to be compared to FEM PM instruments. 
 
 
@@ -16,7 +16,8 @@
 **Please Note:** App will not work correctly in R studio's native web launcher please change settings in Run App -> set to run External or select open in Browser when running it in R studio. 
 1. Download the Repository and Make sure R, R studio, and all packages are installed in order for the App to properly function
 2. Run the App in your normal web browser and browse your computer for the Raw data files (multiple files can be selected at one time)
-3. Data will be uploaded and combined into one data file. Select the Timezone and which Dataset to Download. Rename as you would like.
+3. Select the Timezone the Data will be in. Additionally, Check off the Smoke Conversion if your data contains high PM2.5 (smoke).
+4. Select which Data will be uploaded and it will combined into one data file. Click Download and rename as you would like.
 
 ## Data Tabs
 This is Information on what has been done in each of the Data Tabs that can be downloaded. 
@@ -40,5 +41,7 @@ A: Yes! please View the .txt file on the what the column names mean and their co
 A: The file limit size is based on your memory limit of your device. For best results It is recomended to only do a few months at a time when importing data (less than 10,000 measurements) to make viewing data easier.  
 5. What is the Recommended Data Table/ Column to get for Data analysis?
 A: I recommend downloading the Corrected Data Frame and using the 'PM_corr_EPA' column along with 'date' to compare to a FEM instrument
-6. I have and issue/request/question about the app, how can I contact you?
+6. When would you recommend using the Smoke Conversion option?
+A: I recommend reviewing the EPA Correction Equation Paper on the specifics of what levels have different corrections for Purple Air Data.
+7. I have and issue/request/question about the app, how can I contact you?
 A: Please contact me through Github by creating a new issue and labeling it appropriately and I will try to get back to you ASAP.
