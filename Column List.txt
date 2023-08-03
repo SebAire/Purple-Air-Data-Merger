@@ -23,6 +23,7 @@ Humidity = Current Humidity in %; current_humidity Column from Raw Data
 Dewpoint = Calculated dew point in Fahrenheit; current_dewpoint_f from Raw Data
 Pressure = Current pressure in millibars; pressure from Raw Data
 mac_address = Identifies the unique mac address for the particular sensor (NOT the Sensor ID used for requesting data through the API)
+Timezone = Identifies the Timezone of the Data from the date Column.
 
 Corrected Data:
 date = Calendar Date in POSITct format (Year/Month/Day Hour:Minute:Second); uses UTCDateTime from Raw Data converted to selected Time Zone
@@ -32,11 +33,11 @@ RH: Humidity = Current Humidity in %; used for PM_corr_EPA calulation from Corre
 Temperature = Current temperature in; Fahrenheit. current_temp_f Column from Raw Data
 Pressure = Current pressure in millibars; pressure from Raw Data
 mac_address = Identifies the unique mac address for the particular sensor (NOT the Sensor ID used for requesting data through the API)
+Timezone = Identifies the Timezone of the Data from the date Column.
 
 Frequency Data: 
 Same Columns as Tidy and Average Data however Data Units are number of 2 minute data points taken in each hour 
 
 Note: I recommend downloading the Corrected Data Frame and using the 'PM_corr_EPA' column along with 'date' to compare to a FEM instrument
-
 
 

@@ -1,0 +1,40 @@
+##Version History for Purple Air Data Merger##
+Full Development History at: https://github.com/SebAire/Purple-Air-Data-Merger/releases
+
+1.0.0:
+
+-Intial Release of Application
+
+1.0.1:
+- Fixed Issue with Corrected Data invalidating low PM values (those with less than 5 µg m^-3 difference)
+- Added Dewpoint to Corrected Data (Is not involved with Correcting PM Values)
+Notice: Data corrected using prior Version must be rerun as correction was invalid. Average Data is not affected.
+
+1.0.2:
+- mac_address column is added to each dataframe to allow for easy identification of which sensor the data came from. 
+Note: mac_address is NOT the same as Sensor ID used for requesting data from Purple Air API.
+- A "?" Button is added with information about the Application, Version, and basic Instructions to process Data.
+
+1.0.3:
+Changes in this Version:
+This update focuses on improvements for displaying Errors and data validation.
+
+Dependencies:
+Breaking - a new package is required to run the application (shinyalerts) please rerun install.R file to install the new package.
+
+Improvements:
+- Selecting Data to Download will now switch the Navbar tab to the selected dataframe. 
+- An error message will pop up when downloading a dataframe that contains issues or has not been generated. 
+- Will now display error message letting you know that Columns could not be generated. This highlights there is corruption contained in the columns itself and must currently be fixed manually. #8
+- Additions to Column Names.txt 
+
+1.0.4:
+Changes in this Version:
+This update adds a Smoke Conversion option and a new Timezone Column
+
+Improvements:
+- A new Column "Timezone" is added to identify the timezone of the Column "date"
+- A new optional smoke conversion toggle is added in order to convert High PM2.5 Values with the EPA multilayered smoke equation. Check off the box if you would like to use this equation. 
+- Improvements to instructions in "?" popup in Application.  
+- Additional Info in various supporting documentation.
+- Addition of Version.txt with version Info of Releases. 
