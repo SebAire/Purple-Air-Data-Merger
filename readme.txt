@@ -43,5 +43,7 @@ A: The file limit size is based on your memory limit of your device. For best re
 A: I recommend downloading the Corrected Data Frame and using the 'PM_corr_EPA' column along with 'date' to compare to a FEM instrument
 6. When would you recommend using the Smoke Conversion option?
 A: I recommend reviewing the EPA Correction Equation Paper on the specifics of what levels have different corrections for Purple Air Data.
-7. I have and issue/request/question about the app, how can I contact you?
+7. When would you recommend using the Single Channel Values for Correction option?
+A: I recommend using it when you would like to see how data from 1 channel would look like corrected. Take note that corrected data from a one channel sensor is not how EPA derived correction was developed.
+8. I have and issue/request/question about the app, how can I contact you?
 A: Please contact me through Github by creating a new issue and labeling it appropriately and I will try to get back to you ASAP.
