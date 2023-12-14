@@ -45,5 +45,5 @@ This is Information on what has been done in each of the Data Tabs that can be d
 > A: I recommend reviewing the EPA Correction Equation Paper on the specifics of what levels have different corrections for Purple Air Data.
 7. When would you recommend using the Single Channel Values for Correction option?
 > A: I recommend using it when you would like to see how data from 1 channel would look like corrected. Take note that corrected data from a one channel sensor is not how EPA derived correction was developed.
-8. I have and issue/request/question about the app, how can I contact you?****
+8. I have and issue/request/question about the app, how can I contact you?
 > A: Please contact me through Github by creating a new issue and labeling it appropriately and I will try to get back to you ASAP.
