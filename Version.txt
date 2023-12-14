@@ -38,3 +38,11 @@ Improvements:
 - Improvements to instructions in "?" popup in Application.  
 - Additional Info in various supporting documentation.
 - Addition of Version.txt with version Info of Releases. 
+
+1.0.5:
+Changes in this Version:
+This update adds a optional method to correct data with only one channel
+Note: The EPA Drived Correction Equation was developed with two channels and is not designed with 1 channel in mind. Take care to note the data that is corrected data from a one channel sensor.
+
+Improvements:
+- Added Use only Single Channel Values for Correction option. Check off the box if you would like to use this equation.
