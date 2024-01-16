@@ -46,3 +46,13 @@ Note: The EPA Drived Correction Equation was developed with two channels and is 
 
 Improvements:
 - Added Use only Single Channel Values for Correction option which will use either A or B channel if it has data or average it if both are present. 
+
+1.0.6:
+Changes in this Version:
+This update adds a new optional tab on the sidebar containing the optional conversions and new options for data processing.
+
+Improvements:
+-Added a new optional tab that contains the optional conversions for the data. All prior optional conversions have been moved to this tab.
+-Added a new option to include PM1 and PM10 Channels in Average and Tidy Data tabs
+-Added a new option to manually select PM2.5 Channel for Corrected Data. Can choose between Channel A or Channel B.
+-Revised Single Channel Values for Correction option to describe its function in more detail. Now known as Compress Channels together to remove NA Values.    
