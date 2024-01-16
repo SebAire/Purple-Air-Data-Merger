@@ -2,7 +2,9 @@
 library(shiny)
 library(DT)
 library(bslib)
+#library("shinyWidgets")
 library("shinyalert")
+#library("shinydashboard")
 #library(shinyjs)
 #library(bootstraplib)
 library("dplyr")
@@ -19,11 +21,11 @@ library("lubridate")
 library("data.table")
 library("openair")
 
-# Purple Air Data Merger Release 1.0.5
+# Purple Air Data Merger V1.0.6
 # Define UI for application ----
 ui <- fluidPage(
   theme = bs_theme(version = 4, secondary = "#210749", bootswatch = "pulse"),
-
+ #useShinydashboard(),
   # App title ----
   titlePanel("Purple Air Data Merger"),
   
@@ -32,13 +34,16 @@ ui <- fluidPage(
     
     # Sidebar panel for inputs ----
     sidebarPanel(
-      
-      # Input: Select a file 
+      tabsetPanel(
+      tabPanel("Main", 
+        # Input: Select a file 
       # fileInput("rawdata", "Choose Raw CSV File",
       #           multiple = TRUE,
       #           accept = c("text/csv",
       #                      "text/comma-separated-values,text/plain",
       #                      ".csv")),
+      # Horizontal line ----
+      tags$hr(),
       fileInput("rawdata", "Choose Raw CSV File(s):",
                 multiple = TRUE,
                 accept = ".csv"),
@@ -60,13 +65,6 @@ ui <- fluidPage(
                    choices = c(UTC = "UTC",
                                EST = "EST"),
                    selected = "UTC"),
-      
-      # Input: Choose Smoke Calculation Optional ----
-      checkboxInput("smokeset", "Optional: Use Smoke (High PM2.5) Conversion", value = FALSE),
-      
-      # Input: Choose Smoke Calculation Optional ----
-      checkboxInput("channelset", "Optional: Use only Single Channel Values for Correction", value = FALSE),
-      
       # Horizontal line ----
       tags$hr(),
       
@@ -79,7 +77,32 @@ ui <- fluidPage(
       
       tags$hr(),
       actionButton("helpbutton", "", icon = icon("question-circle"))
-      
+      ),
+      tabPanel("Optional",
+               
+               # Horizontal line ----
+               tags$hr(),
+  
+               # Input: Choose Smoke Calculation Optional ----
+               checkboxInput("smokeset", "Optional: Use Smoke (High PM2.5) Conversion", value = FALSE),
+               
+               # Input: Use only Single Channel Values for Correction Optional ----
+               checkboxInput("channelset", "Optional: Compress Channels together to remove NA", value = FALSE),
+               
+               # Input: Include PM1 and PM10 Channels in Average Data Optional ----
+               checkboxInput("pmset", "Optional: include PM1 and PM10 Channels in Average Data", value = FALSE),
+               
+               # Horizontal line ----
+               tags$hr(),
+               
+               # Input: Manually Select a specific Column for Corrected Data Optional ----
+               radioButtons("letterset", "Optional: Manually set Column for Corrected Data",
+                            choices = c(Both = "Both",
+                                        CHA = "Channel A",
+                                        CHB = "Channel B"),
+                            selected = "Both"),
+      )
+      )
     ),
     
     # Main panel for displaying outputs ----
@@ -106,7 +129,6 @@ ui <- fluidPage(
   )
 )
 )
-
 #Create Function for Debugging Files ----
 alertNoData <- function(data) # Creates and alert to showcase that you cannot download the data
 {
@@ -212,8 +234,8 @@ server <- function(input, output, session) {
   Tidy_data <- reactive({
     req(input$rawdata)
     Tidy_data <- Raw_data()
-#    if(input$channelset == FALSE) {
-    Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+    if(input$pmset == TRUE) {
+    Tidy_data <- select(Tidy_data, "UTCDateTime", "pm1_0_cf_1", "pm1_0_cf_1_b", "pm2_5_cf_1", "pm2_5_cf_1_b", "pm10_0_cf_1", "pm10_0_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
     #Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
     Tidy_data$UTCDateTime <- str_replace_all(Tidy_data$UTCDateTime, "[:alpha:]", " ") #Removes any letters in Date column
     #Tidy_data$UTCDateTime <- str_remove_all(Tidy_data$UTCDateTime, '[Tz]') #Removes any letters in Date column
@@ -221,12 +243,21 @@ server <- function(input, output, session) {
     # Tidy_data <- Tidy_data %>% 
     #   mutate(Date_EST = as_datetime(Date_UTC, tz = "EST"))
     #Tidy_data$Date_UTC <- as.POSIXct(Tidy_data$UTCDateTime, tz = "EST", format = "%Y/%m/%d %H:%M:%S", usetz = T) # Convert to UTC
-    Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+    Tidy_data <- select(Tidy_data, "Date_UTC", "pm1_0_cf_1", "pm1_0_cf_1_b", "pm2_5_cf_1", "pm2_5_cf_1_b", "pm10_0_cf_1", "pm10_0_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
     #Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
-    colnames(Tidy_data) = c("date", "PM2.5_A", "PM2.5_B", "Temperature", "Humidity", "Dewpoint", "Pressure")
+    colnames(Tidy_data) = c("date", "PM1_A", "PM1_B", "PM2.5_A", "PM2.5_B", "PM10_A", "PM10_B", "Temperature", "Humidity", "Dewpoint", "Pressure")
     #return(Tidy_data)
     #colSums(is.na(Tidy_data)) #prints the number of NA in each column
-#    }
+    }
+    else {
+      Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+      #Tidy_data <- select(Tidy_data, "UTCDateTime", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+      Tidy_data$UTCDateTime <- str_replace_all(Tidy_data$UTCDateTime, "[:alpha:]", " ") #Removes any letters in Date column
+      Tidy_data$Date_UTC <- as.POSIXct(Tidy_data$UTCDateTime, tz = "UTC", format = "%Y/%m/%d %H:%M:%S") # Convert to UTC
+      Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_cf_1", "pm2_5_cf_1_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+      #Tidy_data <- select(Tidy_data, "Date_UTC", "pm2_5_atm", "pm2_5_atm_b", "current_temp_f", "current_humidity", "current_dewpoint_f", "pressure")
+      colnames(Tidy_data) = c("date","PM2.5_A", "PM2.5_B", "Temperature", "Humidity", "Dewpoint", "Pressure")
+    }
     
     # New Portion for MAC address
     Mac_val <- Mac_val()
@@ -305,8 +336,15 @@ server <- function(input, output, session) {
         mutate(PM_Check = ifelse(is.na(PM2.5_A) | is.na(PM2.5_B), coalesce(PM2.5_A,PM2.5_B), PM2.5_AVG))
 #      mutate(PM_Check = ifelse(is.na(PM2.5_A) | is.na(PM2.5_B), coalesce(PM2.5_A,PM2.5_B), paste0(PM2.5_A,PM2.5_B)))
       Purple_Data$AB_dif <- round(Purple_Data$AB_dif_per, 2)
-    }
-    else{
+    } else if(input$letterset == "Channel A"){
+      # Sets the channel to Channel A
+      Purple_Data <- Purple_Data %>%
+        mutate(PM_Check = PM2.5_A)
+    } else if(input$letterset == "Channel B"){
+      # Sets the channel to Channel B
+      Purple_Data <- Purple_Data %>%
+        mutate(PM_Check = PM2.5_B)
+    } else{
     # Validation for correction is 70% difference or a difference of 5 
     #Purple_Data <- Avg_data()
     Purple_Data <- Purple_Data %>%
@@ -464,7 +502,7 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
       {
         Tidydf <- Tidy_data()
         
-        validate(need(ncol(Tidydf) == 9,  "Dataframe is missing columns please review data for errors/corruption"))
+        validate(need(ncol(Tidydf) == 9|11,  "Dataframe is missing columns please review data for errors/corruption"))
         Tbloption <- Zone_sel()
         Tidydf <- datatable(Tidydf) %>% 
           formatDate(columns = 'date',
@@ -492,7 +530,7 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
         {
           Avgdf <- Avg_data()
           # Validation for confirming Dataframe completeness 
-          validate(need(ncol(Avgdf) == 9,  "Dataframe is missing columns please review data for errors/corruption."))
+          validate(need(ncol(Avgdf) == 9|11,  "Dataframe is missing columns please review data for errors/corruption."))
           
           Tbloption <- Zone_sel()
           Avgdf <- datatable(Avgdf) %>% 
@@ -623,7 +661,7 @@ Zone_sel <- reactive({if(input$zonetime == "EST") {
         ),
       tags$hr(),
       h5("About:"),
-      "Purple Air Data Merger Version 1.0.5",
+      "Purple Air Data Merger Version 1.0.6",
       br(),
       "More info and updates can be be found on GitHub:",
       a(href = "https://github.com/SebAire/Purple-Air-Data-Merger", "Link"),
