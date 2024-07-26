@@ -9,6 +9,7 @@ RUN Rscript -e "remotes::install_deps()"
 # Other Method to directly install dependencies
 # RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'luridate', 'data.table', 'openair'))"
 
+RUN PWD
 # Make a directory in the container
 RUN mkdir /home/shiny-app
 
