@@ -1,11 +1,9 @@
 {
   "name": "RStudio Shiny Codespace",
-  "dockerfile": "Dockerfile",
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
-  },
+  "build": {"dockerfile": "Dockerfile"
+},
+
   "features": {
     "ghcr.io/rocker-org/devcontainer-features/r-dependent-packages:0": {}
-},
-  "extensions": []
+}
 }
