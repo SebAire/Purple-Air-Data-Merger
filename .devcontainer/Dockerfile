@@ -5,7 +5,11 @@ FROM rocker/shiny
 RUN mkdir /home/shiny-app
 
 # Install R dependencies
-RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'luridate', 'data.table', 'openair'))"
+RUN install.r remotes
+COPY Depend .
+RUN Rscript -e "remotes::install_deps()"
+RUN rm -f DESCRIPTION
+#RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'luridate', 'data.table', 'openair'))"
 
 # Copy the Shiny app code
 COPY app.R /home/shiny-app/app.R
