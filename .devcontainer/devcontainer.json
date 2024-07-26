@@ -1,8 +1,6 @@
 {
   "name": "RStudio Shiny Codespace",
   "dockerfile": "Dockerfile",
-  "service": "rstudio",
-  "workspaceFolder": "/home/rstudio/workspace",
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
