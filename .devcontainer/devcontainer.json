@@ -4,5 +4,8 @@
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/r-dependent-packages:0": {}
+},
   "extensions": []
 }
