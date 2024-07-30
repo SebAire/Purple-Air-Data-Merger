@@ -14,9 +14,11 @@ RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'lurid
 # Make a directory in the container
 RUN mkdir /home/shiny-app
 
+# Set working Directory
+WORKDIR /
 # Copy the Shiny app code
 COPY app.R /home/shiny-app/app.R
-
+# 
 # Expose the application port
 EXPOSE 8180
 
