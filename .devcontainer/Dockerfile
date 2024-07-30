@@ -1,15 +1,16 @@
 # Base R Shiny image
 FROM rocker/shiny
 
+#WORKDIR /
 # Install R dependencies
-RUN install.r remotes
-COPY DESCRIPTION .
-RUN Rscript -e "remotes::install_deps()"
+#RUN install.r remotes
+#COPY DESCRIPTION .
+#RUN Rscript -e "remotes::install_deps()"
 
 # Other Method to directly install dependencies
-# RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'luridate', 'data.table', 'openair'))"
+RUN R -e "install.packages(c('shiny', 'DT', 'stringr', 'tidyr', 'tibble', 'luridate', 'data.table', 'openair'))"
 
-RUN PWD
+#RUN PWD
 # Make a directory in the container
 RUN mkdir /home/shiny-app
 
@@ -21,3 +22,6 @@ EXPOSE 8180
 
 # Run the R Shiny app
 CMD Rscript /home/shiny-app/app.R
+#FROM rocker/shiny:latest
+#COPY ./app/* /srv/shiny-server/
+#CMD ["/usr/bin/shiny-server"]
